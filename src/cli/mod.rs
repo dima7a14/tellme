@@ -27,15 +27,28 @@ pub enum Commands {
 }
 
 #[derive(Debug)]
+enum CliErrorKind {
+    MissingWord,
+}
+
+impl CliErrorKind {
+    const fn code(&self) -> u8 {
+        match self {
+            Self::MissingWord => 2,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct CliError {
-    code: u8,
+    kind: CliErrorKind,
     msg: String,
 }
 
 impl std::process::Termination for CliError {
     fn report(self) -> std::process::ExitCode {
         eprintln!("{}", self.msg);
-        std::process::ExitCode::from(self.code)
+        std::process::ExitCode::from(self.kind.code())
     }
 }
 
@@ -46,6 +59,9 @@ fn required_word(word: Option<String>) -> Result<String, String> {
 pub fn parse_word(word: Option<String>) -> Result<String, CliError> {
     match required_word(word) {
         Ok(w) => Ok(w),
-        Err(msg) => Err(CliError { code: 2, msg }),
+        Err(msg) => Err(CliError {
+            kind: CliErrorKind::MissingWord,
+            msg,
+        }),
     }
 }

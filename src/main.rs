@@ -1,9 +1,18 @@
+use std::process::{ExitCode, Termination};
+
 use clap::Parser;
 mod cli;
 
 const DEFAULT_DEST: &str = "uk";
 
-fn main() -> Result<(), cli::CliError> {
+fn main() -> ExitCode {
+    match inner_run() {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => e.report(),
+    }
+}
+
+fn inner_run() -> Result<(), cli::CliError> {
     let cli = cli::Cli::parse();
 
     match cli.debug {
