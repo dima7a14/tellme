@@ -26,18 +26,26 @@ pub enum Commands {
     Memory,
 }
 
-fn required_word(word: Option<String>) -> Result<String, String> {
-    word.ok_or("You must provide a word!".to_string())
+#[derive(Debug)]
+pub struct CliError {
+    code: u8,
+    msg: String,
 }
 
-pub fn parse_word(word: Option<String>) -> String {
-    let word = match required_word(word) {
-        Ok(w) => w,
-        Err(msg) => {
-            eprintln!("{msg}");
-            std::process::exit(2);
-        }
-    };
+impl std::process::Termination for CliError {
+    fn report(self) -> std::process::ExitCode {
+        eprintln!("{}", self.msg);
+        std::process::ExitCode::from(self.code)
+    }
+}
 
-    word
+fn required_word(word: Option<String>) -> Result<String, String> {
+    word.ok_or_else(|| "You must provide a word!".to_string())
+}
+
+pub fn parse_word(word: Option<String>) -> Result<String, CliError> {
+    match required_word(word) {
+        Ok(w) => Ok(w),
+        Err(msg) => Err(CliError { code: 2, msg }),
+    }
 }

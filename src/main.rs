@@ -3,7 +3,7 @@ mod cli;
 
 const DEFAULT_DEST: &str = "uk";
 
-fn main() {
+fn main() -> Result<(), cli::CliError> {
     let cli = cli::Cli::parse();
 
     match cli.debug {
@@ -15,22 +15,26 @@ fn main() {
 
     match &cli.command {
         Some(cli::Commands::Translate) => {
-            let word = cli::parse_word(cli.word);
+            let word = cli::parse_word(cli.word)?;
             let dest = cli.dest.as_deref().unwrap_or(DEFAULT_DEST);
             println!("Translating a word \"{word}\" to {dest}...");
+            Ok(())
         }
         Some(cli::Commands::Definition) => {
-            let word = cli::parse_word(cli.word);
+            let word = cli::parse_word(cli.word)?;
             println!("Looking for definitions for the word \"{word}\"");
+            Ok(())
         }
         Some(cli::Commands::Memory) => {
             let prev_words = ["Apple", "Sun", "Inquiry"];
             println!("Listing the list of words asked earlier {prev_words:?}");
+            Ok(())
         }
         None => {
-            let word = cli::parse_word(cli.word);
+            let word = cli::parse_word(cli.word)?;
             let dest = cli.dest.as_deref().unwrap_or(DEFAULT_DEST);
             println!("Translating a word \"{word}\" to {dest} and looking for definitions...");
+            Ok(())
         }
     }
 }
