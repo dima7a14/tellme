@@ -15,18 +15,12 @@ fn main() {
 
     match &cli.command {
         Some(cli::Commands::Translate) => {
-            let Some(word) = cli.word else {
-                println!("You must provide a word!");
-                return;
-            };
+            let word = cli::parse_word(cli.word);
             let dest = cli.dest.as_deref().unwrap_or(DEFAULT_DEST);
             println!("Translating a word \"{word}\" to {dest}...");
         }
         Some(cli::Commands::Definition) => {
-            let Some(word) = cli.word else {
-                println!("You must provide a word!");
-                return;
-            };
+            let word = cli::parse_word(cli.word);
             println!("Looking for definitions for the word \"{word}\"");
         }
         Some(cli::Commands::Memory) => {
@@ -34,10 +28,7 @@ fn main() {
             println!("Listing the list of words asked earlier {prev_words:?}");
         }
         None => {
-            let Some(word) = cli.word else {
-                println!("You must provide a word!");
-                return;
-            };
+            let word = cli::parse_word(cli.word);
             let dest = cli.dest.as_deref().unwrap_or(DEFAULT_DEST);
             println!("Translating a word \"{word}\" to {dest} and looking for definitions...");
         }
