@@ -19,7 +19,7 @@ fn main() {
                 println!("You must provide a word!");
                 return;
             };
-            let dest = cli.dest.as_deref().unwrap_or_else(|| DEFAULT_DEST);
+            let dest = cli.dest.as_deref().unwrap_or(DEFAULT_DEST);
             println!("Translating a word \"{word}\" to {dest}...");
         }
         Some(cli::Commands::Definition) => {
@@ -38,7 +38,7 @@ fn main() {
                 println!("You must provide a word!");
                 return;
             };
-            let dest = cli.dest.as_deref().unwrap_or_else(|| DEFAULT_DEST);
+            let dest = cli.dest.as_deref().unwrap_or(DEFAULT_DEST);
             println!("Translating a word \"{word}\" to {dest} and looking for definitions...");
         }
     }
