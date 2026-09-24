@@ -1,6 +1,8 @@
 use clap::Parser;
 mod cli;
 
+const DEFAULT_DEST: &str = "uk";
+
 fn main() {
     let cli = cli::Cli::parse();
 
@@ -12,33 +14,17 @@ fn main() {
     }
 
     match &cli.command {
-        Some(cli::Commands::Translate) => {
-            let Some(word) = cli.word else {
-                eprintln!("You must provide a word.");
-                return;
-            };
-            println!("Translating a word \"{}\"...", word);
+        Some(cli::Commands::Translate { word, dest }) => {
+            let dest = dest.as_deref().unwrap_or_else(|| DEFAULT_DEST);
+            println!("Translating a word \"{word}\" to {dest}...");
         }
-        Some(cli::Commands::Definition) => {
-            let Some(word) = cli.word else {
-                eprintln!("You must provide a word.");
-                return;
-            };
-            println!("Looking for definitions for the word \"{}\"", word);
+        Some(cli::Commands::Definition { word }) => {
+            println!("Looking for definitions for the word \"{word}\"");
         }
         Some(cli::Commands::Memory) => {
             let prev_words = ["Apple", "Sun", "Inquiry"];
-            println!("Listing the list of words asked earlier {:?}", prev_words);
+            println!("Listing the list of words asked earlier {prev_words:?}");
         }
-        None => {
-            let Some(word) = cli.word else {
-                eprintln!("You must provide a word.");
-                return;
-            };
-            println!(
-                "Translating and looking for defintions for the word \"{}\"",
-                word
-            );
-        }
+        None => (),
     }
 }

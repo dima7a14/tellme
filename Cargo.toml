@@ -1,6 +1,6 @@
 [package]
 name = "tellme"
-about = "My personal CLI tool for learning English unknown words"
+description = "My personal CLI tool for learning English unknown words"
 version = "0.1.0"
 edition = "2024"
 
