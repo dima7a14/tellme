@@ -6,6 +6,12 @@ pub struct Cli {
     #[arg(short, long, action = clap::ArgAction::Count)]
     pub debug: u8,
 
+    #[arg(short, long, global = true)]
+    pub word: Option<String>,
+
+    #[arg(short = 't', long, global = true)]
+    pub dest: Option<String>,
+
     #[command(subcommand)]
     pub command: Option<Commands>,
 }
@@ -13,9 +19,9 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Commands {
     /// Translate given word
-    Translate { word: String, dest: Option<String> },
+    Translate,
     /// Display explanation for the given word
-    Definition { word: String },
+    Definition,
     /// Show the list of queried words
     Memory,
 }
