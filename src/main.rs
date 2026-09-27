@@ -2,17 +2,19 @@ use std::process::{ExitCode, Termination};
 
 use clap::Parser;
 mod cli;
+mod translation;
 
 const DEFAULT_DEST: &str = "uk";
 
-fn main() -> ExitCode {
-    match inner_run() {
+#[tokio::main]
+async fn main() -> ExitCode {
+    match inner_run().await {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => e.report(),
     }
 }
 
-fn inner_run() -> Result<(), cli::CliError> {
+async fn inner_run() -> Result<(), cli::CliError> {
     let cli = cli::Cli::parse();
 
     match cli.debug {
@@ -27,6 +29,12 @@ fn inner_run() -> Result<(), cli::CliError> {
             let word = cli::parse_word(cli.word)?;
             let dest = cli.dest.as_deref().unwrap_or(DEFAULT_DEST);
             println!("Translating a word \"{word}\" to {dest}...");
+            let result = translation::translate(&word, dest).await?;
+
+            println!(
+                "Translation: {} (Score: {}).",
+                result.translation, result.score
+            );
             Ok(())
         }
         Some(cli::Commands::Definition) => {
@@ -43,6 +51,12 @@ fn inner_run() -> Result<(), cli::CliError> {
             let word = cli::parse_word(cli.word)?;
             let dest = cli.dest.as_deref().unwrap_or(DEFAULT_DEST);
             println!("Translating a word \"{word}\" to {dest} and looking for definitions...");
+            let translation_result = translation::translate(&word, dest).await?;
+
+            println!(
+                "Translation: {} (Score: {}).",
+                translation_result.translation, translation_result.score
+            );
             Ok(())
         }
     }
