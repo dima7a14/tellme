@@ -29,12 +29,14 @@ pub enum Commands {
 #[derive(Debug)]
 enum CliErrorKind {
     MissingWord,
+    Unknown,
 }
 
 impl CliErrorKind {
     const fn code(&self) -> u8 {
         match self {
             Self::MissingWord => 2,
+            Self::Unknown => 1,
         }
     }
 }
@@ -49,6 +51,15 @@ impl std::process::Termination for CliError {
     fn report(self) -> std::process::ExitCode {
         eprintln!("{}", self.msg);
         std::process::ExitCode::from(self.kind.code())
+    }
+}
+
+impl From<Box<dyn std::error::Error>> for CliError {
+    fn from(value: Box<dyn std::error::Error>) -> Self {
+        Self {
+            msg: value.to_string(),
+            kind: CliErrorKind::Unknown,
+        }
     }
 }
 
