@@ -1,6 +1,8 @@
 use std::process::{ExitCode, Termination};
 
 use clap::Parser;
+
+use crate::translation::TranslationResult;
 mod cli;
 mod translation;
 
@@ -31,10 +33,8 @@ async fn inner_run() -> Result<(), cli::CliError> {
             println!("Translating a word \"{word}\" to {dest}...");
             let result = translation::translate(&word, dest).await?;
 
-            println!(
-                "Translation: {} (Score: {}).",
-                result.translation, result.score
-            );
+            print_translation_result(&result);
+
             Ok(())
         }
         Some(cli::Commands::Definition) => {
@@ -53,11 +53,19 @@ async fn inner_run() -> Result<(), cli::CliError> {
             println!("Translating a word \"{word}\" to {dest} and looking for definitions...");
             let translation_result = translation::translate(&word, dest).await?;
 
-            println!(
-                "Translation: {} (Score: {}).",
-                translation_result.translation, translation_result.score
-            );
+            print_translation_result(&translation_result);
+
             Ok(())
         }
     }
+}
+
+fn print_translation_result(result: &TranslationResult) {
+    let mut output_str = format!("Translation: {}", result.translation);
+
+    if let Some(score) = result.score {
+        output_str.push_str(format!(" (Score: {score})").as_str());
+    }
+
+    println!("{output_str}");
 }

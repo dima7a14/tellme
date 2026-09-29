@@ -18,6 +18,7 @@ struct ResponseData {
 struct TranslateResponse {
     response_data: ResponseData,
     response_status: Status,
+    #[serde(default)]
     response_details: String,
 }
 
@@ -27,6 +28,10 @@ struct Status(u32);
 impl Status {
     fn is_ok(self) -> bool {
         (200..300).contains(&self.0)
+    }
+
+    const fn code(self) -> u32 {
+        self.0
     }
 }
 
@@ -57,7 +62,7 @@ impl<'de> Deserialize<'de> for Status {
 #[derive(Debug)]
 pub struct TranslationResult {
     pub translation: String,
-    pub score: f64,
+    pub score: Option<f64>,
 }
 
 pub async fn translate(
@@ -80,26 +85,27 @@ pub async fn translate(
                     let response_status = res.response_status;
 
                     if !response_status.is_ok() {
-                        return Err(res.response_details.into());
+                        let msg = if res.response_details.is_empty() {
+                            format!("translation failed (status {})", res.response_status.code())
+                        } else {
+                            res.response_details
+                        };
+
+                        return Err(msg.into());
                     }
 
                     let translated_word = res.response_data.translated_text;
-                    let score = res.response_data.score.unwrap_or_default();
+                    let score = res.response_data.score;
 
                     (translated_word, score)
                 }
                 Err(err) => {
-                    eprintln!("{err:?}");
-
                     return Err(Box::new(err));
                 }
             };
 
             Ok(TranslationResult { translation, score })
         }
-        Err(err) => {
-            eprintln!("{err:?}");
-            Err(Box::new(err))
-        }
+        Err(err) => Err(Box::new(err)),
     }
 }
