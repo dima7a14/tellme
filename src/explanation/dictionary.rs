@@ -42,13 +42,12 @@ pub async fn dictionary(word: &str) -> Result<DictionaryResult, Box<dyn std::err
 
     match api {
         ApiResponse::Definitions(defs) => {
-            if let Some(first) = defs.first() {
-                Ok(DictionaryResult {
-                    definitions: first.shortdef.clone(),
+            defs.first()
+                .map_or(Err("Empty definitions array returned".into()), |def| {
+                    Ok(DictionaryResult {
+                        definitions: def.shortdef.clone(),
+                    })
                 })
-            } else {
-                Err("Empty definitions array returned".into())
-            }
         }
         ApiResponse::Suggestions(suggestions) => {
             let msg = format!(
