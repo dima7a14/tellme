@@ -4,6 +4,7 @@ use clap::Parser;
 
 use crate::translation::TranslationResult;
 mod cli;
+mod explanation;
 mod translation;
 
 const DEFAULT_DEST: &str = "uk";
@@ -40,6 +41,8 @@ async fn inner_run() -> Result<(), cli::CliError> {
         Some(cli::Commands::Definition) => {
             let word = cli::parse_word(cli.word)?;
             println!("Looking for definitions for the word \"{word}\"");
+            let dict = explanation::dictionary::dictionary(&word).await?;
+            println!("{dict}");
             Ok(())
         }
         Some(cli::Commands::Memory) => {
@@ -52,8 +55,9 @@ async fn inner_run() -> Result<(), cli::CliError> {
             let dest = cli.dest.as_deref().unwrap_or(DEFAULT_DEST);
             println!("Translating a word \"{word}\" to {dest} and looking for definitions...");
             let translation_result = translation::translate(&word, dest).await?;
-
             print_translation_result(&translation_result);
+            let dict = explanation::dictionary::dictionary(&word).await?;
+            println!("{dict}");
 
             Ok(())
         }
