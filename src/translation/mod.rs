@@ -65,6 +65,17 @@ pub struct TranslationResult {
     pub score: Option<f64>,
 }
 
+impl fmt::Display for TranslationResult {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut output_str = format!("Translation: {}", &self.translation);
+        if let Some(score) = &self.score {
+            output_str.push_str(format!(" (Score: {score})").as_str());
+        }
+
+        write!(f, "Translation:\n{output_str}")
+    }
+}
+
 pub async fn translate(
     word: &str,
     dest: &str,
