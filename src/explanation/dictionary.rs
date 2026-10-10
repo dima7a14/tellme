@@ -1,7 +1,10 @@
 use serde::Deserialize;
+use std::env;
 use std::fmt;
 
-const KEY: &str = "a90a90a5-e266-4482-ada5-36408db2b20f";
+fn parse_key() -> Result<String, env::VarError> {
+    env::var("MERRIAM_WEBSTER_API_KEY")
+}
 
 const BASE_URL: &str = "https://www.dictionaryapi.com/api/v3/references/collegiate/json/";
 
@@ -34,7 +37,7 @@ pub async fn dictionary(word: &str) -> Result<DictionaryResult, Box<dyn std::err
     let client = reqwest::Client::new();
     let mut url = reqwest::Url::parse(BASE_URL)?;
     url = url.join(word)?;
-    url.query_pairs_mut().append_pair("key", KEY);
+    url.query_pairs_mut().append_pair("key", &parse_key()?);
 
     let res = client.get(url.as_str()).send().await?;
 

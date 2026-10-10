@@ -67,7 +67,7 @@ pub struct TranslationResult {
 
 impl fmt::Display for TranslationResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut output_str = format!("Translation: {}", &self.translation);
+        let mut output_str = self.translation.clone();
         if let Some(score) = &self.score {
             output_str.push_str(format!(" (Score: {score})").as_str());
         }

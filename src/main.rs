@@ -10,6 +10,7 @@ const DEFAULT_DEST: &str = "uk";
 
 #[tokio::main]
 async fn main() -> ExitCode {
+    let _ = dotenvy::dotenv();
     match inner_run().await {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => e.report(),
@@ -32,7 +33,6 @@ async fn inner_run() -> Result<(), cli::CliError> {
             let dest = cli.dest.as_deref().unwrap_or(DEFAULT_DEST);
             println!("Translating a word \"{word}\" to {dest}...");
             let result = translation::translate(&word, dest).await?;
-
             println!("{result}");
 
             Ok(())
