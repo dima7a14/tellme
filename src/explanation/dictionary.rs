@@ -2,8 +2,13 @@ use serde::Deserialize;
 use std::env;
 use std::fmt;
 
-fn parse_key() -> Result<String, env::VarError> {
-    env::var("MERRIAM_WEBSTER_API_KEY")
+fn parse_key() -> Result<String, Box<dyn std::error::Error>> {
+    env::var("MERRIAM_WEBSTER_API_KEY").map_err(|_| {
+        Box::<dyn std::error::Error>::from(
+            "MERRIAM_WEBSTER_API_KEY environment variable is not set.\n
+            Copy .env.example to .env and add your Merriam-Webster API key.",
+        )
+    })
 }
 
 const BASE_URL: &str = "https://www.dictionaryapi.com/api/v3/references/collegiate/json/";
@@ -54,7 +59,7 @@ pub async fn dictionary(word: &str) -> Result<DictionaryResult, Box<dyn std::err
         }
         ApiResponse::Suggestions(suggestions) => {
             let msg = format!(
-                "No exact definition found. Did you mean: ({})?",
+                "No exact definition found. Did you mean: {}?",
                 suggestions.join(", ")
             );
 
