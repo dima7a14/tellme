@@ -26,53 +26,20 @@ pub enum Commands {
     Memory,
 }
 
-#[derive(Debug)]
-enum CliErrorKind {
+#[derive(thiserror::Error, Debug)]
+pub enum CliError {
+    #[error("you must provide a word!")]
     MissingWord,
-    Unknown,
 }
 
-impl CliErrorKind {
-    const fn code(&self) -> u8 {
+impl CliError {
+    pub const fn code(&self) -> u8 {
         match self {
             Self::MissingWord => 2,
-            Self::Unknown => 1,
         }
     }
-}
-
-#[derive(Debug)]
-pub struct CliError {
-    kind: CliErrorKind,
-    msg: String,
-}
-
-impl std::process::Termination for CliError {
-    fn report(self) -> std::process::ExitCode {
-        eprintln!("{}", self.msg);
-        std::process::ExitCode::from(self.kind.code())
-    }
-}
-
-impl From<Box<dyn std::error::Error>> for CliError {
-    fn from(value: Box<dyn std::error::Error>) -> Self {
-        Self {
-            msg: value.to_string(),
-            kind: CliErrorKind::Unknown,
-        }
-    }
-}
-
-fn required_word(word: Option<String>) -> Result<String, String> {
-    word.ok_or_else(|| "You must provide a word!".to_string())
 }
 
 pub fn parse_word(word: Option<String>) -> Result<String, CliError> {
-    match required_word(word) {
-        Ok(w) => Ok(w),
-        Err(msg) => Err(CliError {
-            kind: CliErrorKind::MissingWord,
-            msg,
-        }),
-    }
+    word.ok_or(CliError::MissingWord)
 }

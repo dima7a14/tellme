@@ -2,11 +2,38 @@ use std::process::{ExitCode, Termination};
 
 use clap::Parser;
 
+use crate::explanation::dictionary;
+
 mod cli;
 mod explanation;
+// mod storage;
 mod translation;
 
 const DEFAULT_DEST: &str = "uk";
+
+#[derive(thiserror::Error, Debug)]
+enum AppError {
+    #[error(transparent)]
+    Translation(#[from] translation::TranslationError),
+    #[error(transparent)]
+    Dictionary(#[from] dictionary::DictionaryError),
+    // #[error(transparent)]
+    // Storage(#[from] storage::StorageError),
+    #[error(transparent)]
+    Cli(#[from] cli::CliError),
+}
+
+impl Termination for AppError {
+    fn report(self) -> ExitCode {
+        eprintln!("{self}");
+        let code = match &self {
+            Self::Cli(e) => e.code(),
+            _ => 1,
+        };
+
+        ExitCode::from(code)
+    }
+}
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -17,7 +44,7 @@ async fn main() -> ExitCode {
     }
 }
 
-async fn inner_run() -> Result<(), cli::CliError> {
+async fn inner_run() -> Result<(), AppError> {
     let cli = cli::Cli::parse();
 
     match cli.debug {

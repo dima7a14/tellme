@@ -76,10 +76,19 @@ impl fmt::Display for TranslationResult {
     }
 }
 
-pub async fn translate(
-    word: &str,
-    dest: &str,
-) -> Result<TranslationResult, Box<dyn std::error::Error>> {
+#[derive(thiserror::Error, Debug)]
+pub enum TranslationError {
+    #[error(transparent)]
+    Parse(#[from] url::ParseError),
+    #[error("HTTP request failed")]
+    Get(#[from] reqwest::Error),
+    #[error("failed to decode the translation response")]
+    Decode(#[source] reqwest::Error),
+    #[error("{0}")]
+    Api(String),
+}
+
+pub async fn translate(word: &str, dest: &str) -> Result<TranslationResult, TranslationError> {
     let client = reqwest::Client::new();
     let mut url = reqwest::Url::parse(URL)?;
 
@@ -102,7 +111,7 @@ pub async fn translate(
                             res.response_details
                         };
 
-                        return Err(msg.into());
+                        return Err(TranslationError::Api(msg));
                     }
 
                     let translated_word = res.response_data.translated_text;
@@ -111,12 +120,12 @@ pub async fn translate(
                     (translated_word, score)
                 }
                 Err(err) => {
-                    return Err(Box::new(err));
+                    return Err(TranslationError::Decode(err));
                 }
             };
 
             Ok(TranslationResult { translation, score })
         }
-        Err(err) => Err(Box::new(err)),
+        Err(err) => Err(TranslationError::Get(err)),
     }
 }

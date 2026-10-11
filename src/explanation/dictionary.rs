@@ -38,7 +38,19 @@ impl fmt::Display for DictionaryResult {
     }
 }
 
-pub async fn dictionary(word: &str) -> Result<DictionaryResult, Box<dyn std::error::Error>> {
+#[derive(thiserror::Error, Debug)]
+pub enum DictionaryError {
+    #[error(transparent)]
+    Parse(#[from] url::ParseError),
+    #[error(transparent)]
+    Query(#[from] Box<dyn std::error::Error>),
+    #[error("HTTP request failed")]
+    Get(#[from] reqwest::Error),
+    #[error("{0}")]
+    Api(String),
+}
+
+pub async fn dictionary(word: &str) -> Result<DictionaryResult, DictionaryError> {
     let client = reqwest::Client::new();
     let mut url = reqwest::Url::parse(BASE_URL)?;
     url = url.join(word)?;
@@ -49,21 +61,23 @@ pub async fn dictionary(word: &str) -> Result<DictionaryResult, Box<dyn std::err
     let api: ApiResponse = res.error_for_status()?.json().await?;
 
     match api {
-        ApiResponse::Definitions(defs) => {
-            defs.first()
-                .map_or(Err("Empty definitions array returned".into()), |def| {
-                    Ok(DictionaryResult {
-                        definitions: def.shortdef.clone(),
-                    })
+        ApiResponse::Definitions(defs) => defs.first().map_or(
+            Err(DictionaryError::Api(
+                "Empty definitions array returned".into(),
+            )),
+            |def| {
+                Ok(DictionaryResult {
+                    definitions: def.shortdef.clone(),
                 })
-        }
+            },
+        ),
         ApiResponse::Suggestions(suggestions) => {
             let msg = format!(
                 "No exact definition found. Did you mean: {}?",
                 suggestions.join(", ")
             );
 
-            Err(msg.into())
+            Err(DictionaryError::Api(msg))
         }
     }
 }
