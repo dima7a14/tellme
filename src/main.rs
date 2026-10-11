@@ -3,10 +3,13 @@ use std::process::{ExitCode, Termination};
 use clap::Parser;
 
 use crate::explanation::dictionary;
+use crate::storage::Word;
+use crate::storage::redb_repository::{RedbError, RedbRepository};
+use crate::storage::repository::{WordRepository, WordRepositoryError};
 
 mod cli;
 mod explanation;
-// mod storage;
+mod storage;
 mod translation;
 
 const DEFAULT_DEST: &str = "uk";
@@ -17,8 +20,10 @@ enum AppError {
     Translation(#[from] translation::TranslationError),
     #[error(transparent)]
     Dictionary(#[from] dictionary::DictionaryError),
-    // #[error(transparent)]
-    // Storage(#[from] storage::StorageError),
+    #[error(transparent)]
+    Storage(#[from] WordRepositoryError),
+    #[error("failed to establish the database connection")]
+    Database(#[source] RedbError),
     #[error(transparent)]
     Cli(#[from] cli::CliError),
 }
@@ -46,13 +51,7 @@ async fn main() -> ExitCode {
 
 async fn inner_run() -> Result<(), AppError> {
     let cli = cli::Cli::parse();
-
-    match cli.debug {
-        0 => println!("Debug mode is off"),
-        1 => println!("Debug mod is kind of on"),
-        2 => println!("Debug mode is on"),
-        _ => println!("Don't be crazy"),
-    }
+    let storage = RedbRepository::new().map_err(AppError::Database)?;
 
     match &cli.command {
         Some(cli::Commands::Translate) => {
@@ -84,6 +83,14 @@ async fn inner_run() -> Result<(), AppError> {
             println!("{translation_result}");
             let dict = explanation::dictionary::dictionary(&word).await?;
             println!("{dict}");
+
+            storage.save(
+                &word,
+                &Word {
+                    translation: translation_result.translation,
+                    definitions: Some(dict.definitions),
+                },
+            )?;
 
             Ok(())
         }

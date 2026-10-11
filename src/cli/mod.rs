@@ -3,9 +3,6 @@ use clap::{Parser, Subcommand};
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 pub struct Cli {
-    #[arg(short, long, action = clap::ArgAction::Count, global = true)]
-    pub debug: u8,
-
     #[arg(short, long, global = true)]
     pub word: Option<String>,
 
