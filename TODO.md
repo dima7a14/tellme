@@ -6,5 +6,6 @@
 - [ ] Move target language to the env variable
 - [x] Connect dictionary and thesaurus.
 - [x] Set-up local DB to store words and definitions.
-- [ ] Use the local DB as cache for already requested words.
+- [x] Use the local DB as cache for already requested words.
+- [ ] Display the list of cached words with navigation.
 - [ ] Come up with some mini-games to train a memory.
