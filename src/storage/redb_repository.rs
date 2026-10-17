@@ -36,6 +36,13 @@ impl RedbRepository {
     pub fn new() -> Result<Self, RedbError> {
         let db = Database::create("tellme_db.redb")?;
 
+        // Create a table if it does not exist
+        {
+            let txn = db.begin_write().map_err(redb::Error::from)?;
+            txn.open_table(TABLE).map_err(redb::Error::from)?;
+            txn.commit().map_err(redb::Error::from)?;
+        }
+
         Ok(Self { db })
     }
 
