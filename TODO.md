@@ -1,9 +1,11 @@
 # Current state & features plan of the app:
 
-1. [x] Update an old repo.
-2. [x] Write commandline interface with basic commands.
-3. [x] Set-up translation API.
-4. [ ] Connect dictionary and thesaurus.
-5. [ ] Set-up local DB to store words and definitions.
-6. [ ] Use the local DB as cache for already requested words.
-7. [ ] Come up with some mini-games to train a memory.
+- [x] Update an old repo.
+- [x] Write commandline interface with basic commands.
+- [x] Set-up translation API.
+- [ ] Move target language to the env variable
+- [x] Connect dictionary and thesaurus.
+- [x] Set-up local DB to store words and definitions.
+- [x] Use the local DB as cache for already requested words.
+- [ ] Display the list of cached words with navigation.
+- [ ] Come up with some mini-games to train a memory.

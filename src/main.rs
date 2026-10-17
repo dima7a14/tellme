@@ -1,12 +1,54 @@
+use std::env;
 use std::process::{ExitCode, Termination};
 
 use clap::Parser;
 
+use crate::explanation::dictionary;
+use crate::storage::Word;
+use crate::storage::redb_repository::{RedbError, RedbRepository};
+use crate::storage::repository::{WordRepository, WordRepositoryError};
+
 mod cli;
 mod explanation;
+mod storage;
 mod translation;
 
-const DEFAULT_DEST: &str = "uk";
+fn parse_dest_lang() -> Result<String, Box<dyn std::error::Error>> {
+    env::var("DESTINATION_LANGUAGE").map_err(|_| {
+        Box::<dyn std::error::Error>::from(
+            "DESTINATION_LANGUAGE environment variable is not set.\n\
+            Copy .env.example to .env and set your destination language.",
+        )
+    })
+}
+
+#[derive(thiserror::Error, Debug)]
+enum AppError {
+    #[error(transparent)]
+    Translation(#[from] translation::TranslationError),
+    #[error(transparent)]
+    Dictionary(#[from] dictionary::DictionaryError),
+    #[error(transparent)]
+    Storage(#[from] WordRepositoryError),
+    #[error("failed to establish the database connection: {0}")]
+    Database(#[source] RedbError),
+    #[error(transparent)]
+    Cli(#[from] cli::CliError),
+    #[error(transparent)]
+    MissingEnv(#[from] Box<dyn std::error::Error>),
+}
+
+impl Termination for AppError {
+    fn report(self) -> ExitCode {
+        eprintln!("{self}");
+        let code = match &self {
+            Self::Cli(e) => e.code(),
+            _ => 1,
+        };
+
+        ExitCode::from(code)
+    }
+}
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -17,31 +59,59 @@ async fn main() -> ExitCode {
     }
 }
 
-async fn inner_run() -> Result<(), cli::CliError> {
+async fn inner_run() -> Result<(), AppError> {
     let cli = cli::Cli::parse();
-
-    match cli.debug {
-        0 => println!("Debug mode is off"),
-        1 => println!("Debug mod is kind of on"),
-        2 => println!("Debug mode is on"),
-        _ => println!("Don't be crazy"),
-    }
 
     match &cli.command {
         Some(cli::Commands::Translate) => {
             let word = cli::parse_word(cli.word)?;
-            let dest = cli.dest.as_deref().unwrap_or(DEFAULT_DEST);
-            println!("Translating a word \"{word}\" to {dest}...");
-            let result = translation::translate(&word, dest).await?;
-            println!("{result}");
+            let dest = parse_dest_lang()?;
+            let storage = RedbRepository::new().map_err(AppError::Database)?;
+
+            if let Some(existing) = storage.get(&word)?
+                && existing.translation.is_some()
+            {
+                println!("Found word \"{word}\" in the cache!");
+                println!("{existing}");
+            } else {
+                println!("Translating a word \"{word}\" to {dest}...");
+                let result = translation::translate(&word, &dest).await?;
+                println!("{result}");
+
+                storage.save(
+                    &word,
+                    Word {
+                        translation: Some(result.translation),
+                        ..Default::default()
+                    },
+                )?;
+            }
 
             Ok(())
         }
         Some(cli::Commands::Definition) => {
             let word = cli::parse_word(cli.word)?;
-            println!("Looking for definitions for the word \"{word}\"");
-            let dict = explanation::dictionary::dictionary(&word).await?;
-            println!("{dict}");
+            let storage = RedbRepository::new().map_err(AppError::Database)?;
+
+            if let Some(existing) = storage.get(&word)?
+                && existing.definitions.is_some()
+            {
+                println!("Found word \"{word}\" in the cache!");
+                println!("{existing}");
+            } else {
+                println!("Looking for definitions for the word \"{word}\"");
+                let dict = explanation::dictionary::dictionary(&word).await?;
+                println!("{dict}");
+
+                storage.save(
+                    &word,
+                    Word {
+                        definitions: Some(dict.definitions),
+                        ..Default::default()
+                    },
+                )?;
+            }
+
             Ok(())
         }
         Some(cli::Commands::Memory) => {
@@ -51,12 +121,30 @@ async fn inner_run() -> Result<(), cli::CliError> {
         }
         None => {
             let word = cli::parse_word(cli.word)?;
-            let dest = cli.dest.as_deref().unwrap_or(DEFAULT_DEST);
-            println!("Translating a word \"{word}\" to {dest} and looking for definitions...");
-            let translation_result = translation::translate(&word, dest).await?;
-            println!("{translation_result}");
-            let dict = explanation::dictionary::dictionary(&word).await?;
-            println!("{dict}");
+            let dest = parse_dest_lang()?;
+            let storage = RedbRepository::new().map_err(AppError::Database)?;
+
+            if let Some(existing) = storage.get(&word)?
+                && existing.translation.is_some()
+                && existing.definitions.is_some()
+            {
+                println!("Found word \"{word}\" in the cache!");
+                println!("{existing}");
+            } else {
+                println!("Translating a word \"{word}\" to {dest} and looking for definitions...");
+                let translation_result = translation::translate(&word, &dest).await?;
+                println!("{translation_result}");
+                let dict = explanation::dictionary::dictionary(&word).await?;
+                println!("{dict}");
+
+                storage.save(
+                    &word,
+                    Word {
+                        translation: Some(translation_result.translation),
+                        definitions: Some(dict.definitions),
+                    },
+                )?;
+            }
 
             Ok(())
         }
