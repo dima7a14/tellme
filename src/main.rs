@@ -51,10 +51,10 @@ async fn main() -> ExitCode {
 
 async fn inner_run() -> Result<(), AppError> {
     let cli = cli::Cli::parse();
-    let storage = RedbRepository::new().map_err(AppError::Database)?;
 
     match &cli.command {
         Some(cli::Commands::Translate) => {
+            let storage = RedbRepository::new().map_err(AppError::Database)?;
             let word = cli::parse_word(cli.word)?;
             let dest = cli.dest.as_deref().unwrap_or(DEFAULT_DEST);
 
@@ -80,6 +80,7 @@ async fn inner_run() -> Result<(), AppError> {
             Ok(())
         }
         Some(cli::Commands::Definition) => {
+            let storage = RedbRepository::new().map_err(AppError::Database)?;
             let word = cli::parse_word(cli.word)?;
 
             if let Some(existing) = storage.get(&word)?
@@ -109,6 +110,7 @@ async fn inner_run() -> Result<(), AppError> {
             Ok(())
         }
         None => {
+            let storage = RedbRepository::new().map_err(AppError::Database)?;
             let word = cli::parse_word(cli.word)?;
             let dest = cli.dest.as_deref().unwrap_or(DEFAULT_DEST);
 

@@ -80,7 +80,7 @@ impl fmt::Display for TranslationResult {
 pub enum TranslationError {
     #[error(transparent)]
     Parse(#[from] url::ParseError),
-    #[error("HTTP request failed")]
+    #[error("HTTP request failed: {0}")]
     Get(#[from] reqwest::Error),
     #[error("failed to decode the translation response")]
     Decode(#[source] reqwest::Error),

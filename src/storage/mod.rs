@@ -35,6 +35,6 @@ impl fmt::Display for Word {
         let translation = self.translation.as_deref().unwrap_or("no translation");
         let definitions = self.definitions.as_deref().unwrap_or(&[]).join("\n");
 
-        write!(f, "Translation: {translation}\nDefitions:\n{definitions}")
+        write!(f, "Translation: {translation}\nDefinitions:\n{definitions}")
     }
 }

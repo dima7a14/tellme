@@ -2,9 +2,9 @@ use crate::storage::Word;
 
 #[derive(thiserror::Error, Debug)]
 pub enum WordRepositoryError {
-    #[error("the word repository is unavailable")]
+    #[error("the word repository is unavailable: {0}")]
     Unavailable(#[source] Box<dyn std::error::Error + Send + Sync>),
-    #[error("stored entry for \"{word}\" is corrupted")]
+    #[error("stored entry for \"{word}\" is corrupted: {source}")]
     Corrupted {
         word: String,
         #[source]
