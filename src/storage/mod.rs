@@ -5,6 +5,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct Word {
-    pub translation: String,
+    pub translation: Option<String>,
     pub definitions: Option<Vec<String>>,
 }

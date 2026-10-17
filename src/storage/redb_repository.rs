@@ -39,8 +39,8 @@ impl RedbRepository {
         Ok(Self { db })
     }
 
-    fn put(&self, word: &str, payload: &Word) -> Result<(), RedbError> {
-        let bytes = serde_json::to_vec(payload)?;
+    fn put(&self, word: &str, payload: Word) -> Result<(), RedbError> {
+        let bytes = serde_json::to_vec(&payload)?;
         let txn = self.db.begin_write().map_err(redb::Error::from)?;
 
         {
@@ -70,9 +70,22 @@ impl WordRepository for RedbRepository {
     fn save(
         &self,
         word: &str,
-        payload: &Word,
+        payload: Word,
     ) -> Result<(), super::repository::WordRepositoryError> {
-        self.put(word, payload).map_err(|e| e.into_repo_error(word))
+        let existed = self.get(word)?;
+
+        match existed {
+            Some(existed) => {
+                let merged_payload = Word {
+                    translation: payload.translation.or(existed.translation),
+                    definitions: payload.definitions.or(existed.definitions),
+                };
+
+                self.put(word, merged_payload)
+                    .map_err(|e| e.into_repo_error(word))
+            }
+            None => self.put(word, payload).map_err(|e| e.into_repo_error(word)),
+        }
     }
 
     fn get(&self, word: &str) -> Result<Option<Word>, super::repository::WordRepositoryError> {

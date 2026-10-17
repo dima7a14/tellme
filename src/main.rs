@@ -86,8 +86,8 @@ async fn inner_run() -> Result<(), AppError> {
 
             storage.save(
                 &word,
-                &Word {
-                    translation: translation_result.translation,
+                Word {
+                    translation: Some(translation_result.translation),
                     definitions: Some(dict.definitions),
                 },
             )?;

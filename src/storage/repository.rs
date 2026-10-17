@@ -13,7 +13,7 @@ pub enum WordRepositoryError {
 }
 
 pub trait WordRepository {
-    fn save(&self, word: &str, payload: &Word) -> Result<(), WordRepositoryError>;
+    fn save(&self, word: &str, payload: Word) -> Result<(), WordRepositoryError>;
     fn get(&self, word: &str) -> Result<Option<Word>, WordRepositoryError>;
     fn list(&self) -> Result<Vec<(String, Word)>, WordRepositoryError>;
 }
