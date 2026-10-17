@@ -57,17 +57,46 @@ async fn inner_run() -> Result<(), AppError> {
         Some(cli::Commands::Translate) => {
             let word = cli::parse_word(cli.word)?;
             let dest = cli.dest.as_deref().unwrap_or(DEFAULT_DEST);
-            println!("Translating a word \"{word}\" to {dest}...");
-            let result = translation::translate(&word, dest).await?;
-            println!("{result}");
+
+            if let Some(existing) = storage.get(&word)? {
+                println!("Found word \"{word}\" in the cache!");
+                println!("{existing}");
+            } else {
+                println!("Translating a word \"{word}\" to {dest}...");
+                let result = translation::translate(&word, dest).await?;
+                println!("{result}");
+
+                storage.save(
+                    &word,
+                    Word {
+                        translation: Some(result.translation),
+                        ..Default::default()
+                    },
+                )?;
+            }
 
             Ok(())
         }
         Some(cli::Commands::Definition) => {
             let word = cli::parse_word(cli.word)?;
-            println!("Looking for definitions for the word \"{word}\"");
-            let dict = explanation::dictionary::dictionary(&word).await?;
-            println!("{dict}");
+
+            if let Some(existing) = storage.get(&word)? {
+                println!("Found word \"{word}\" in the cache!");
+                println!("{existing}");
+            } else {
+                println!("Looking for definitions for the word \"{word}\"");
+                let dict = explanation::dictionary::dictionary(&word).await?;
+                println!("{dict}");
+
+                storage.save(
+                    &word,
+                    Word {
+                        definitions: Some(dict.definitions),
+                        ..Default::default()
+                    },
+                )?;
+            }
+
             Ok(())
         }
         Some(cli::Commands::Memory) => {
@@ -78,19 +107,25 @@ async fn inner_run() -> Result<(), AppError> {
         None => {
             let word = cli::parse_word(cli.word)?;
             let dest = cli.dest.as_deref().unwrap_or(DEFAULT_DEST);
-            println!("Translating a word \"{word}\" to {dest} and looking for definitions...");
-            let translation_result = translation::translate(&word, dest).await?;
-            println!("{translation_result}");
-            let dict = explanation::dictionary::dictionary(&word).await?;
-            println!("{dict}");
 
-            storage.save(
-                &word,
-                Word {
-                    translation: Some(translation_result.translation),
-                    definitions: Some(dict.definitions),
-                },
-            )?;
+            if let Some(existing) = storage.get(&word)? {
+                println!("Found word \"{word}\" in the cache!");
+                println!("{existing}");
+            } else {
+                println!("Translating a word \"{word}\" to {dest} and looking for definitions...");
+                let translation_result = translation::translate(&word, dest).await?;
+                println!("{translation_result}");
+                let dict = explanation::dictionary::dictionary(&word).await?;
+                println!("{dict}");
+
+                storage.save(
+                    &word,
+                    Word {
+                        translation: Some(translation_result.translation),
+                        definitions: Some(dict.definitions),
+                    },
+                )?;
+            }
 
             Ok(())
         }

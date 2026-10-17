@@ -39,8 +39,8 @@ impl RedbRepository {
         Ok(Self { db })
     }
 
-    fn put(&self, word: &str, payload: Word) -> Result<(), RedbError> {
-        let bytes = serde_json::to_vec(&payload)?;
+    fn put(&self, word: &str, payload: &Word) -> Result<(), RedbError> {
+        let bytes = serde_json::to_vec(payload)?;
         let txn = self.db.begin_write().map_err(redb::Error::from)?;
 
         {
@@ -81,10 +81,12 @@ impl WordRepository for RedbRepository {
                     definitions: payload.definitions.or(existed.definitions),
                 };
 
-                self.put(word, merged_payload)
+                self.put(word, &merged_payload)
                     .map_err(|e| e.into_repo_error(word))
             }
-            None => self.put(word, payload).map_err(|e| e.into_repo_error(word)),
+            None => self
+                .put(word, &payload)
+                .map_err(|e| e.into_repo_error(word)),
         }
     }
 
@@ -92,6 +94,7 @@ impl WordRepository for RedbRepository {
         self.read(word).map_err(|e| e.into_repo_error(word))
     }
 
+    #[expect(clippy::todo, reason = "list() not implemented yet")]
     fn list(&self) -> Result<Vec<(String, Word)>, super::repository::WordRepositoryError> {
         todo!()
     }
