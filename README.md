@@ -5,16 +5,16 @@ A simple command-line tool that translates a word and explains its meaning — d
 ## Usage
 
 ```bash
-tellme -w <word> -t <lang>
+tellme -w <word>
 ```
 
 ## Example
 
 ```bash
-$ tellme -w resilient -t uk
+$ tellme -w resilient
 ```
 
-**Translation (uk):** стійкий
+**Translation:** стійкий
 **Definition:** able to recover quickly from difficulties; tough.
 
 ## Features

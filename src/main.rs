@@ -1,3 +1,4 @@
+use std::env;
 use std::process::{ExitCode, Termination};
 
 use clap::Parser;
@@ -12,7 +13,14 @@ mod explanation;
 mod storage;
 mod translation;
 
-const DEFAULT_DEST: &str = "uk";
+fn parse_dest_lang() -> Result<String, Box<dyn std::error::Error>> {
+    env::var("DESTINATION_LANGUAGE").map_err(|_| {
+        Box::<dyn std::error::Error>::from(
+            "DESTINATION_LANGUAGE environment variable is not set.\n
+            Copy .env.example to .env and set your destination language.",
+        )
+    })
+}
 
 #[derive(thiserror::Error, Debug)]
 enum AppError {
@@ -22,10 +30,12 @@ enum AppError {
     Dictionary(#[from] dictionary::DictionaryError),
     #[error(transparent)]
     Storage(#[from] WordRepositoryError),
-    #[error("failed to establish the database connection")]
+    #[error("failed to establish the database connection: {0}")]
     Database(#[source] RedbError),
     #[error(transparent)]
     Cli(#[from] cli::CliError),
+    #[error(transparent)]
+    MissingEnv(#[from] Box<dyn std::error::Error>),
 }
 
 impl Termination for AppError {
@@ -56,7 +66,7 @@ async fn inner_run() -> Result<(), AppError> {
         Some(cli::Commands::Translate) => {
             let storage = RedbRepository::new().map_err(AppError::Database)?;
             let word = cli::parse_word(cli.word)?;
-            let dest = cli.dest.as_deref().unwrap_or(DEFAULT_DEST);
+            let dest = parse_dest_lang()?;
 
             if let Some(existing) = storage.get(&word)?
                 && existing.translation.is_some()
@@ -65,7 +75,7 @@ async fn inner_run() -> Result<(), AppError> {
                 println!("{existing}");
             } else {
                 println!("Translating a word \"{word}\" to {dest}...");
-                let result = translation::translate(&word, dest).await?;
+                let result = translation::translate(&word, &dest).await?;
                 println!("{result}");
 
                 storage.save(
@@ -112,7 +122,7 @@ async fn inner_run() -> Result<(), AppError> {
         None => {
             let storage = RedbRepository::new().map_err(AppError::Database)?;
             let word = cli::parse_word(cli.word)?;
-            let dest = cli.dest.as_deref().unwrap_or(DEFAULT_DEST);
+            let dest = parse_dest_lang()?;
 
             if let Some(existing) = storage.get(&word)?
                 && existing.translation.is_some()
@@ -122,7 +132,7 @@ async fn inner_run() -> Result<(), AppError> {
                 println!("{existing}");
             } else {
                 println!("Translating a word \"{word}\" to {dest} and looking for definitions...");
-                let translation_result = translation::translate(&word, dest).await?;
+                let translation_result = translation::translate(&word, &dest).await?;
                 println!("{translation_result}");
                 let dict = explanation::dictionary::dictionary(&word).await?;
                 println!("{dict}");

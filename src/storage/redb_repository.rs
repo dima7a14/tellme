@@ -3,7 +3,7 @@ use crate::storage::{
     repository::{WordRepository, WordRepositoryError},
 };
 use redb::{Database, ReadableDatabase, TableDefinition};
-
+use std::{env, fs, io, path};
 const TABLE: TableDefinition<&str, &[u8]> = TableDefinition::new("words");
 
 #[derive(thiserror::Error, Debug)]
@@ -14,6 +14,18 @@ pub enum RedbError {
     Json(#[from] serde_json::Error),
     #[error(transparent)]
     Redb(#[from] redb::Error),
+    #[error("failed to create database directory at {path}: {source}")]
+    CreateDbDir {
+        path: path::PathBuf,
+        #[source]
+        source: io::Error,
+    },
+    #[error("failed to create database at {path}: {source}")]
+    CreateDb {
+        path: path::PathBuf,
+        #[source]
+        source: redb::DatabaseError,
+    },
 }
 
 impl RedbError {
@@ -34,7 +46,22 @@ pub struct RedbRepository {
 
 impl RedbRepository {
     pub fn new() -> Result<Self, RedbError> {
-        let db = Database::create("tellme_db.redb")?;
+        let db_path: path::PathBuf =
+            env::var("DB_PATH").map_or_else(|_| "./tellme.redb".into(), std::convert::Into::into);
+
+        if let Some(parent) = db_path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            fs::create_dir_all(parent).map_err(|e| RedbError::CreateDbDir {
+                path: parent.to_path_buf(),
+                source: e,
+            })?;
+        }
+
+        let db = Database::create(&db_path).map_err(|e| RedbError::CreateDb {
+            path: db_path.clone(),
+            source: e,
+        })?;
 
         // Create a table if it does not exist
         {
@@ -79,21 +106,22 @@ impl WordRepository for RedbRepository {
         word: &str,
         payload: Word,
     ) -> Result<(), super::repository::WordRepositoryError> {
-        let existed = self.get(word)?;
+        match self.get(word) {
+            Ok(existed) => match existed {
+                Some(existed) => {
+                    let merged_payload = Word {
+                        translation: payload.translation.or(existed.translation),
+                        definitions: payload.definitions.or(existed.definitions),
+                    };
 
-        match existed {
-            Some(existed) => {
-                let merged_payload = Word {
-                    translation: payload.translation.or(existed.translation),
-                    definitions: payload.definitions.or(existed.definitions),
-                };
-
-                self.put(word, &merged_payload)
-                    .map_err(|e| e.into_repo_error(word))
-            }
-            None => self
-                .put(word, &payload)
-                .map_err(|e| e.into_repo_error(word)),
+                    self.put(word, &merged_payload)
+                        .map_err(|e| e.into_repo_error(word))
+                }
+                None => self
+                    .put(word, &payload)
+                    .map_err(|e| e.into_repo_error(word)),
+            },
+            Err(e) => Err(e),
         }
     }
 

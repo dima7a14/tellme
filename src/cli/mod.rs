@@ -6,9 +6,6 @@ pub struct Cli {
     #[arg(short, long, global = true)]
     pub word: Option<String>,
 
-    #[arg(short = 't', long, global = true)]
-    pub dest: Option<String>,
-
     #[command(subcommand)]
     pub command: Option<Commands>,
 }

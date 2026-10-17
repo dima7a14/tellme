@@ -44,7 +44,7 @@ pub enum DictionaryError {
     Parse(#[from] url::ParseError),
     #[error(transparent)]
     Query(#[from] Box<dyn std::error::Error>),
-    #[error("HTTP request failed")]
+    #[error("HTTP request failed: {0}")]
     Get(#[from] reqwest::Error),
     #[error("{0}")]
     Api(String),
