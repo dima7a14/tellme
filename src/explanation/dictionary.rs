@@ -5,7 +5,7 @@ use std::fmt;
 fn parse_key() -> Result<String, Box<dyn std::error::Error>> {
     env::var("MERRIAM_WEBSTER_API_KEY").map_err(|_| {
         Box::<dyn std::error::Error>::from(
-            "MERRIAM_WEBSTER_API_KEY environment variable is not set.\n
+            "MERRIAM_WEBSTER_API_KEY environment variable is not set.\n\
             Copy .env.example to .env and add your Merriam-Webster API key.",
         )
     })

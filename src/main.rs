@@ -16,7 +16,7 @@ mod translation;
 fn parse_dest_lang() -> Result<String, Box<dyn std::error::Error>> {
     env::var("DESTINATION_LANGUAGE").map_err(|_| {
         Box::<dyn std::error::Error>::from(
-            "DESTINATION_LANGUAGE environment variable is not set.\n
+            "DESTINATION_LANGUAGE environment variable is not set.\n\
             Copy .env.example to .env and set your destination language.",
         )
     })
@@ -64,9 +64,9 @@ async fn inner_run() -> Result<(), AppError> {
 
     match &cli.command {
         Some(cli::Commands::Translate) => {
-            let storage = RedbRepository::new().map_err(AppError::Database)?;
             let word = cli::parse_word(cli.word)?;
             let dest = parse_dest_lang()?;
+            let storage = RedbRepository::new().map_err(AppError::Database)?;
 
             if let Some(existing) = storage.get(&word)?
                 && existing.translation.is_some()
@@ -90,8 +90,8 @@ async fn inner_run() -> Result<(), AppError> {
             Ok(())
         }
         Some(cli::Commands::Definition) => {
-            let storage = RedbRepository::new().map_err(AppError::Database)?;
             let word = cli::parse_word(cli.word)?;
+            let storage = RedbRepository::new().map_err(AppError::Database)?;
 
             if let Some(existing) = storage.get(&word)?
                 && existing.definitions.is_some()
@@ -120,9 +120,9 @@ async fn inner_run() -> Result<(), AppError> {
             Ok(())
         }
         None => {
-            let storage = RedbRepository::new().map_err(AppError::Database)?;
             let word = cli::parse_word(cli.word)?;
             let dest = parse_dest_lang()?;
+            let storage = RedbRepository::new().map_err(AppError::Database)?;
 
             if let Some(existing) = storage.get(&word)?
                 && existing.translation.is_some()
