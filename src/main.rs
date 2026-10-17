@@ -58,7 +58,9 @@ async fn inner_run() -> Result<(), AppError> {
             let word = cli::parse_word(cli.word)?;
             let dest = cli.dest.as_deref().unwrap_or(DEFAULT_DEST);
 
-            if let Some(existing) = storage.get(&word)? {
+            if let Some(existing) = storage.get(&word)?
+                && existing.translation.is_some()
+            {
                 println!("Found word \"{word}\" in the cache!");
                 println!("{existing}");
             } else {
@@ -80,7 +82,9 @@ async fn inner_run() -> Result<(), AppError> {
         Some(cli::Commands::Definition) => {
             let word = cli::parse_word(cli.word)?;
 
-            if let Some(existing) = storage.get(&word)? {
+            if let Some(existing) = storage.get(&word)?
+                && existing.definitions.is_some()
+            {
                 println!("Found word \"{word}\" in the cache!");
                 println!("{existing}");
             } else {
@@ -108,7 +112,10 @@ async fn inner_run() -> Result<(), AppError> {
             let word = cli::parse_word(cli.word)?;
             let dest = cli.dest.as_deref().unwrap_or(DEFAULT_DEST);
 
-            if let Some(existing) = storage.get(&word)? {
+            if let Some(existing) = storage.get(&word)?
+                && existing.translation.is_some()
+                && existing.definitions.is_some()
+            {
                 println!("Found word \"{word}\" in the cache!");
                 println!("{existing}");
             } else {
